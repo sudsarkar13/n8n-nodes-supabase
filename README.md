@@ -30,6 +30,8 @@ A comprehensive n8n community node for Supabase that provides both database and 
 - ✅ Schema management capabilities  
 - ✅ Advanced filtering and sorting
 - ✅ Dual UI modes (simple + advanced)
+- ✅ **Smart Dropdowns**: Auto-fetch project URLs and bucket names
+- ✅ **Project Caching**: Recent project URLs cached for convenience
 - ✅ Better error handling and validation
 - ✅ Comprehensive file operations
 - ✅ Bucket management
@@ -75,11 +77,32 @@ docker run -it --rm \
 ### 2. Configure in n8n
 
 1. Create a new **Supabase API** credential
-2. Enter your **Project URL** (e.g., `https://your-project.supabase.co`)
+2. **Project URL**: Select from recent projects or enter manually (e.g., `https://your-project.supabase.co`)
 3. Choose **API Key Type**:
    - **Anon Key**: For client-side operations with RLS
    - **Service Role Key**: For server-side operations (bypasses RLS)
 4. Enter your **API Key**
+
+## New in v1.1.0: Smart Dropdowns 🎉
+
+### Project URL Dropdown
+- **Smart Caching**: Recent project URLs are automatically cached for quick selection
+- **Manual Entry**: Still supports manual input for new projects
+- **URL Validation**: Automatic validation of Supabase URL format
+- **Project Recognition**: Extracts project names from URLs for easy identification
+
+### Bucket Dropdown
+- **Auto-Fetch**: Dynamically loads all available buckets from your Supabase project
+- **Real-Time**: Always shows current bucket list with metadata
+- **Status Indicators**: Shows public/private status and creation dates
+- **Error Handling**: Graceful fallback to manual input if API fails
+- **Permissions Check**: Automatically validates bucket access permissions
+
+### Benefits
+- ⚡ **Faster Setup**: No more typing bucket names manually
+- 🎯 **Error Reduction**: Eliminates typos in bucket names
+- 📊 **Better UX**: Visual indicators for bucket properties
+- 🔄 **Always Current**: Real-time data from your Supabase project
 
 ## Usage Examples
 

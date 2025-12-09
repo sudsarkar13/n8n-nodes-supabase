@@ -15,7 +15,7 @@ export class Supabase implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Supabase',
 		name: 'supabase',
-		icon: 'file:supabase.svg',
+		icon: 'file:icons/supabase.svg',
 		group: ['database'],
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',

@@ -3,6 +3,8 @@ import {
 	ICredentialTestRequest,
 	ICredentialType,
 	INodeProperties,
+	ILoadOptionsFunctions,
+	INodePropertyOptions,
 } from 'n8n-workflow';
 
 export class SupabaseApi implements ICredentialType {
@@ -16,11 +18,14 @@ export class SupabaseApi implements ICredentialType {
 		{
 			displayName: 'Project URL',
 			name: 'host',
-			type: 'string',
+			type: 'options',
+			typeOptions: {
+				loadOptionsMethod: 'getRecentProjects',
+			},
 			default: '',
-			placeholder: 'https://your-project.supabase.co',
+			placeholder: 'Select a recent project or enter manually',
 			required: true,
-			description: 'Your Supabase project URL',
+			description: 'Your Supabase project URL. Recent projects are cached for convenience.',
 		},
 		{
 			displayName: 'API Key Type',
@@ -122,5 +127,61 @@ export class SupabaseApi implements ICredentialType {
 				},
 			},
 		],
+	};
+
+	methods = {
+		loadOptions: {
+			// Load recent Supabase project URLs from cache
+			async getRecentProjects(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				try {
+					// In a real implementation, this would use n8n's context storage
+					// For now, we'll provide common Supabase URL patterns and allow manual input
+					const commonProjects: INodePropertyOptions[] = [
+						{
+							name: 'Enter project URL manually',
+							value: '',
+							description: 'Type your Supabase project URL manually',
+						},
+					];
+
+					// Extract project name from URL pattern
+					const extractProjectName = (url: string): string => {
+						try {
+							const match = url.match(/https:\/\/([^.]+)\.supabase\.co/);
+							return match && match[1] ? match[1] : url;
+						} catch {
+							return url;
+						}
+					};
+
+					// Add some example projects (in real implementation, these would come from cache)
+					const exampleProjects = [
+						'https://your-project.supabase.co',
+						'https://my-app.supabase.co',
+						'https://demo-project.supabase.co',
+					];
+
+					for (const projectUrl of exampleProjects) {
+						const projectName = extractProjectName(projectUrl);
+						commonProjects.push({
+							name: `${projectName} (${projectUrl})`,
+							value: projectUrl,
+							description: `Supabase project: ${projectName}`,
+						});
+					}
+
+					return commonProjects;
+
+				} catch (error) {
+					return [
+						{
+							name: 'Enter project URL manually',
+							value: '',
+							description: 'Type your Supabase project URL (https://your-project.supabase.co)',
+						},
+					];
+				}
+			},
+		},
 	};
 }

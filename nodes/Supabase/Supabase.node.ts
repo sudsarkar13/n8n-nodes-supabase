@@ -1,6 +1,10 @@
 import {
 	IExecuteFunctions,
+	ILoadOptionsFunctions,
 	INodeExecutionData,
+	INodeListSearchItems,
+	INodeListSearchResult,
+	INodePropertyOptions,
 	INodeType,
 	INodeTypeDescription,
 	NodeOperationError,
@@ -497,10 +501,13 @@ export class Supabase implements INodeType {
 			{
 				displayName: 'Bucket',
 				name: 'bucket',
-				type: 'string',
+				type: 'options',
+				typeOptions: {
+					loadOptionsMethod: 'getBuckets',
+				},
 				required: true,
 				default: '',
-				placeholder: 'my-bucket',
+				placeholder: 'Select a bucket or enter manually',
 				description: 'Name of the storage bucket',
 				displayOptions: {
 					show: {
@@ -745,4 +752,55 @@ export class Supabase implements INodeType {
 
 		return [returnData];
 	}
+
+	methods = {
+		loadOptions: {
+			// Load available buckets from Supabase Storage
+			async getBuckets(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const credentials = await this.getCredentials('supabaseApi') as unknown as ISupabaseCredentials;
+				
+				try {
+					validateCredentials(credentials);
+					const supabase = createSupabaseClient(credentials);
+					
+					const { data, error } = await supabase.storage.listBuckets();
+					
+					if (error) {
+						throw new Error(`Failed to fetch buckets: ${error.message}`);
+					}
+					
+					if (!Array.isArray(data)) {
+						return [
+							{
+								name: 'No buckets found',
+								value: '',
+								description: 'Create a bucket first or check your permissions',
+							},
+						];
+					}
+					
+					const options: INodePropertyOptions[] = data.map((bucket: any) => ({
+						name: `${bucket.name}${bucket.public ? ' (Public)' : ' (Private)'}`,
+						value: bucket.name,
+						description: `Created: ${bucket.created_at ? new Date(bucket.created_at).toLocaleDateString() : 'Unknown'}`,
+					}));
+					
+					// Sort buckets alphabetically
+					options.sort((a, b) => a.name.localeCompare(b.name));
+					
+					return options;
+					
+				} catch (error) {
+					const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+					return [
+						{
+							name: `Error: ${errorMessage}`,
+							value: '',
+							description: 'Failed to load buckets. Please check your credentials and try again.',
+						},
+					];
+				}
+			},
+		},
+	};
 }

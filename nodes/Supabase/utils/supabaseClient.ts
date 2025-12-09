@@ -1,0 +1,182 @@
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { ISupabaseCredentials } from '../types';
+
+/**
+ * Creates a Supabase client instance with the provided credentials
+ */
+export function createSupabaseClient(credentials: ISupabaseCredentials): SupabaseClient {
+	// Create client with minimal options to avoid deep type instantiation
+	const client = createClient(credentials.host, credentials.serviceKey, {
+		auth: {
+			autoRefreshToken: true,
+			persistSession: false,
+			detectSessionInUrl: false,
+		},
+	});
+
+	return client;
+}
+
+/**
+ * Validates Supabase credentials
+ */
+export function validateCredentials(credentials: ISupabaseCredentials): void {
+	if (!credentials.host) {
+		throw new Error('Supabase Project URL is required');
+	}
+
+	if (!credentials.serviceKey) {
+		throw new Error('Supabase API Key is required');
+	}
+
+	// Validate URL format
+	try {
+		new URL(credentials.host);
+	} catch {
+		throw new Error('Invalid Supabase Project URL format');
+	}
+
+	// Check if URL is a Supabase URL
+	if (!credentials.host.includes('supabase.co') && !credentials.host.includes('localhost')) {
+		throw new Error('URL must be a valid Supabase project URL');
+	}
+}
+
+/**
+ * Gets the storage URL for a Supabase project
+ */
+export function getStorageUrl(projectUrl: string): string {
+	const url = new URL(projectUrl);
+	return `${url.protocol}//${url.host}/storage/v1`;
+}
+
+/**
+ * Gets the database REST URL for a Supabase project
+ */
+export function getDatabaseUrl(projectUrl: string): string {
+	const url = new URL(projectUrl);
+	return `${url.protocol}//${url.host}/rest/v1`;
+}
+
+/**
+ * Formats error messages from Supabase responses
+ */
+export function formatSupabaseError(error: any): string {
+	if (!error) return 'Unknown error occurred';
+	
+	if (typeof error === 'string') return error;
+	
+	if (error.message) return error.message;
+	
+	if (error.error_description) return error.error_description;
+	
+	if (error.details) return error.details;
+	
+	return JSON.stringify(error);
+}
+
+/**
+ * Checks if an error is a Supabase authentication error
+ */
+export function isAuthError(error: any): boolean {
+	if (!error) return false;
+	
+	const authErrorCodes = [
+		'invalid_api_key',
+		'insufficient_privileges',
+		'unauthorized',
+		'forbidden',
+	];
+	
+	return authErrorCodes.some(code => 
+		error.code === code || 
+		error.message?.toLowerCase().includes(code) ||
+		error.statusCode === 401 ||
+		error.statusCode === 403
+	);
+}
+
+/**
+ * Checks if an error is a network/connection error
+ */
+export function isNetworkError(error: any): boolean {
+	if (!error) return false;
+	
+	const networkErrorPatterns = [
+		'network',
+		'connection',
+		'timeout',
+		'unreachable',
+		'dns',
+		'econnrefused',
+		'enotfound',
+	];
+	
+	const errorMessage = error.message?.toLowerCase() || '';
+	
+	return networkErrorPatterns.some(pattern => errorMessage.includes(pattern));
+}
+
+/**
+ * Sanitizes column names for SQL operations
+ */
+export function sanitizeColumnName(columnName: string): string {
+	// Remove any characters that aren't alphanumeric, underscore, or hyphen
+	return columnName.replace(/[^a-zA-Z0-9_-]/g, '');
+}
+
+/**
+ * Validates table name format
+ */
+export function validateTableName(tableName: string): void {
+	if (!tableName) {
+		throw new Error('Table name is required');
+	}
+	
+	if (!/^[a-zA-Z][a-zA-Z0-9_]*$/.test(tableName)) {
+		throw new Error('Table name must start with a letter and contain only letters, numbers, and underscores');
+	}
+	
+	if (tableName.length > 63) {
+		throw new Error('Table name must be 63 characters or less');
+	}
+}
+
+/**
+ * Validates column name format
+ */
+export function validateColumnName(columnName: string): void {
+	if (!columnName) {
+		throw new Error('Column name is required');
+	}
+	
+	if (!/^[a-zA-Z][a-zA-Z0-9_]*$/.test(columnName)) {
+		throw new Error('Column name must start with a letter and contain only letters, numbers, and underscores');
+	}
+	
+	if (columnName.length > 63) {
+		throw new Error('Column name must be 63 characters or less');
+	}
+}
+
+/**
+ * Converts filter operator to Supabase PostgREST format
+ */
+export function convertFilterOperator(operator: string): string {
+	const operatorMap: Record<string, string> = {
+		'eq': 'eq',
+		'neq': 'neq',
+		'gt': 'gt',
+		'gte': 'gte', 
+		'lt': 'lt',
+		'lte': 'lte',
+		'like': 'like',
+		'ilike': 'ilike',
+		'is': 'is',
+		'in': 'in',
+		'cs': 'cs', // contains
+		'cd': 'cd', // contained by
+	};
+	
+	return operatorMap[operator] || 'eq';
+}

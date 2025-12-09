@@ -299,7 +299,7 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/n8n-nodes-supabase.git
+git clone https://github.com/sudsarkar13/n8n-nodes-supabase.git
 cd n8n-nodes-supabase
 
 # Install dependencies
@@ -340,9 +340,9 @@ See [CHANGELOG.md](CHANGELOG.md) for version history and updates.
 
 ## Support
 
-- 📖 [Documentation](https://github.com/yourusername/n8n-nodes-supabase/wiki)
-- 🐛 [Bug Reports](https://github.com/yourusername/n8n-nodes-supabase/issues)
-- 💡 [Feature Requests](https://github.com/yourusername/n8n-nodes-supabase/discussions)
+- 📖 [Documentation](https://github.com/sudsarkar13/n8n-nodes-supabase/wiki)
+- 🐛 [Bug Reports](https://github.com/sudsarkar13/n8n-nodes-supabase/issues)
+- 💡 [Feature Requests](https://github.com/sudsarkar13/n8n-nodes-supabase/discussions)
 - 💬 [Community Discord](https://discord.gg/n8n)
 
 ## Related Projects

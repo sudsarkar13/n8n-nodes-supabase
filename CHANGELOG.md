@@ -81,6 +81,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - This is the initial release, no breaking changes from previous versions
 
 ### Migration Guide
+
 If migrating from the built-in n8n Supabase node:
 
 1. Database operations should work with minimal changes

@@ -4,11 +4,6 @@ export interface ISupabaseCredentials {
 	serviceKey: string;
 	additionalOptions?: {
 		schema?: string;
-		enableManagementApi?: boolean;
-		managementToken?: string;
-		autoRefreshToken?: boolean;
-		persistSession?: boolean;
-		detectSessionInUrl?: boolean;
 	};
 }
 

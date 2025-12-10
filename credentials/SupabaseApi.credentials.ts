@@ -3,15 +3,7 @@ import {
 	ICredentialTestRequest,
 	ICredentialType,
 	INodeProperties,
-	ILoadOptionsFunctions,
-	INodePropertyOptions,
 } from 'n8n-workflow';
-
-import { 
-	getOrganizationsOptions, 
-	getProjectsOptions, 
-	SupabaseManagementApiClient 
-} from '../nodes/Supabase/utils/managementApi';
 
 export class SupabaseApi implements ICredentialType {
 	name = 'supabaseApi';
@@ -54,29 +46,6 @@ export class SupabaseApi implements ICredentialType {
 					type: 'string',
 					default: 'public',
 					description: 'Database schema to use (default: public)',
-				},
-				{
-					displayName: 'Enable Management API Features',
-					name: 'enableManagementApi',
-					type: 'boolean',
-					default: false,
-					description: 'Enable advanced features like auto-discovery of tables and buckets',
-				},
-				{
-					displayName: 'Management API Token',
-					name: 'managementToken',
-					type: 'string',
-					typeOptions: {
-						password: true,
-					},
-					displayOptions: {
-						show: {
-							enableManagementApi: [true],
-						},
-					},
-					default: '',
-					placeholder: 'sbp_xxxxxxxxxxxxxxxxxxxx',
-					description: 'Your Supabase Management API token for enhanced features (optional)',
 				},
 			],
 		},

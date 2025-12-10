@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2024-12-10
+
+### BREAKING CHANGES
+- **Removed Management API functionality completely** - This is a major simplification that removes all Management API features to focus on core Supabase operations
+
+### Removed
+- Management API integration and all related code (341 lines removed)
+- Auto-discovery of tables and columns via Management API
+- Management API token configuration in credentials
+- `enableManagementApi` and `managementToken` credential fields
+- Organization and project listing features
+- Complex fallback logic for table/column loading
+- `nodes/Supabase/utils/managementApi.ts` file entirely
+
+### Changed
+- **BREAKING**: Table field is now a simple text input instead of dropdown with loadOptions
+- **BREAKING**: Column names must be entered manually instead of auto-populated
+- Simplified credential configuration - only Host, Service Role Secret, and Schema remain
+- Reduced bundle size significantly (~300+ lines of code removed)
+- Improved reliability by removing complex Management API authentication flows
+
+### Benefits
+- Significantly simplified codebase and reduced complexity
+- Faster load times (no Management API calls)
+- More reliable credential system
+- Easier maintenance and debugging
+- Reduced potential for authentication issues
+- Smaller bundle size
+
+### Migration Guide
+Users upgrading from v1.1.x to v1.2.0:
+1. **Table names**: Previously auto-populated table dropdown now requires manual entry
+2. **Column names**: Must be entered manually in column fields
+3. **Credentials**: Remove any Management API tokens from existing credentials (they will be ignored)
+4. **Functionality**: All core database and storage operations remain fully functional
+
+**Note**: This version focuses on core Supabase functionality while removing the experimental Management API features that were causing authentication complexity.
+
 ## [1.1.2] - 2024-12-10
 
 ### Fixed

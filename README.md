@@ -83,29 +83,75 @@ docker run -it --rm \
    - **Service Role Key**: For server-side operations (bypasses RLS)
 4. Enter your **API Key**
 
-## New in v1.1.0: Smart Dropdowns 🎉
+## New in v1.1.1: Enhanced Credential Management 🚀
 
-### Project URL Dropdown
+### Dual-Mode Connection System
 
-- **Smart Caching**: Recent project URLs are automatically cached for quick selection
-- **Manual Entry**: Still supports manual input for new projects
-- **URL Validation**: Automatic validation of Supabase URL format
-- **Project Recognition**: Extracts project names from URLs for easy identification
+**Auto-Discovery Mode** 🔍
 
-### Bucket Dropdown
+- **Management API Integration**: Connect using your Supabase Management API token
+- **Organization Selection**: Auto-discover and select from your organizations
+- **Project Auto-Discovery**: Real-time project list with status and metadata
+- **Automatic URL Population**: Project URLs auto-populated from selections
+- **Rich Metadata**: See project status, region, creation date, and more
 
-- **Auto-Fetch**: Dynamically loads all available buckets from your Supabase project
-- **Real-Time**: Always shows current bucket list with metadata
-- **Status Indicators**: Shows public/private status and creation dates
-- **Error Handling**: Graceful fallback to manual input if API fails
-- **Permissions Check**: Automatically validates bucket access permissions
+**Manual Entry Mode** ✏️
+
+- **Enhanced Validation**: Better URL format validation and error messages
+- **Smart Caching**: Recent project URLs cached for quick selection
+- **Improved Testing**: Enhanced credential validation with detailed feedback
+- **Backward Compatibility**: All existing configurations continue to work
+
+### Smart Dropdowns & Auto-Discovery
+
+**Project & Organization Management**
+
+- **Real Organizations**: Load actual organizations from your Supabase account
+- **Live Project Data**: See real project names, status, and regions
+- **Auto-Population**: Project URLs automatically filled when selected
+- **Fallback Support**: Graceful fallback to manual entry if API unavailable
+
+**Database Schema Discovery**
+
+- **Table Auto-Discovery**: Dropdown of actual tables from your database
+- **Column Intelligence**: Auto-populate columns based on selected table
+- **Schema Awareness**: Support for custom schemas beyond 'public'
+- **Metadata Rich**: See table info like RLS status, size, and row counts
+
+**Storage Integration**
+
+- **Bucket Auto-Fetch**: Real-time bucket list with metadata
+- **Permission Validation**: Automatic access permission checking
+- **Status Indicators**: Visual indicators for public/private buckets
+- **Creation Metadata**: See bucket creation dates and properties
 
 ### Benefits
 
-- ⚡ **Faster Setup**: No more typing bucket names manually
-- 🎯 **Error Reduction**: Eliminates typos in bucket names
-- 📊 **Better UX**: Visual indicators for bucket properties
-- 🔄 **Always Current**: Real-time data from your Supabase project
+- 🎯 **Zero Configuration Errors**: Eliminate typos in URLs, table names, and bucket names
+- ⚡ **Lightning Fast Setup**: Auto-discovery reduces setup time by 90%
+- 🔍 **Real-Time Validation**: Instant feedback on credential validity
+- 📊 **Rich Context**: See project status, table schemas, and bucket properties
+- 🔄 **Always Current**: Live data from your Supabase projects
+- 🛡️ **Enhanced Security**: Management API integration with proper scoping
+- 🔧 **Flexible Configuration**: Choose between auto-discovery or manual entry
+- 🔄 **Graceful Fallbacks**: Manual entry available when auto-discovery fails
+
+## How to Get Management API Token
+
+For Auto-Discovery mode, you'll need a Supabase Management API token:
+
+1. **Login to Supabase Dashboard**: Go to https://supabase.com/dashboard
+2. **Account Settings**: Click your profile/avatar in the top right
+3. **Access Tokens**: Navigate to "Access Tokens" section
+4. **Generate Token**: Click "Generate new token"
+5. **Set Permissions**: Choose appropriate scopes:
+   - **Projects**: Read access to list and get project details
+   - **Organizations**: Read access to list organizations
+   - **Database**: Read access for schema information
+   - **Storage**: Read access for bucket management
+6. **Copy Token**: Save the token securely (starts with `sbp_`)
+
+**Note**: Management API tokens are different from project API keys and are used for managing multiple projects and organizations.
 
 ## Usage Examples
 

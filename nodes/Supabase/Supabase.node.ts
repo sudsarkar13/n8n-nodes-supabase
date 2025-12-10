@@ -14,6 +14,7 @@ import { createSupabaseClient, validateCredentials } from './utils/supabaseClien
 import { executeDatabaseOperation } from './operations/database';
 import { executeStorageOperation } from './operations/storage';
 import { ISupabaseCredentials, SupabaseResource, DatabaseOperation, StorageOperation } from './types';
+import { getTablesOptions, getColumnsOptions } from './utils/managementApi';
 
 export class Supabase implements INodeType {
 	description: INodeTypeDescription = {
@@ -262,11 +263,14 @@ export class Supabase implements INodeType {
 			{
 				displayName: 'Table',
 				name: 'table',
-				type: 'string',
+				type: 'options',
+				typeOptions: {
+					loadOptionsMethod: 'getTables',
+				},
 				required: true,
 				default: '',
-				placeholder: 'users',
-				description: 'Name of the table to operate on',
+				placeholder: 'Select a table or enter manually',
+				description: 'Name of the table to operate on. Auto-populated from your database schema.',
 				displayOptions: {
 					show: {
 						resource: ['database'],
@@ -800,6 +804,16 @@ export class Supabase implements INodeType {
 						},
 					];
 				}
+			},
+
+			// Load available tables from database
+			async getTables(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				return getTablesOptions(this);
+			},
+
+			// Load available columns from selected table
+			async getColumns(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				return getColumnsOptions(this);
 			},
 		},
 	};

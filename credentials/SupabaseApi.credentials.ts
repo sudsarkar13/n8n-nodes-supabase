@@ -7,6 +7,12 @@ import {
 	INodePropertyOptions,
 } from 'n8n-workflow';
 
+import { 
+	getOrganizationsOptions, 
+	getProjectsOptions, 
+	SupabaseManagementApiClient 
+} from '../nodes/Supabase/utils/managementApi';
+
 export class SupabaseApi implements ICredentialType {
 	name = 'supabaseApi';
 
@@ -16,16 +22,100 @@ export class SupabaseApi implements ICredentialType {
 
 	properties: INodeProperties[] = [
 		{
-			displayName: 'Project URL',
-			name: 'host',
+			displayName: 'Connection Mode',
+			name: 'connectionMode',
 			type: 'options',
+			options: [
+				{
+					name: 'Auto-Discovery',
+					value: 'auto',
+					description: 'Use Management API to auto-discover projects and resources',
+				},
+				{
+					name: 'Manual Entry',
+					value: 'manual',
+					description: 'Enter project details manually',
+				},
+			],
+			default: 'manual',
+			description: 'Choose how to configure your Supabase connection',
+		},
+
+		// Auto-Discovery Mode Fields
+		{
+			displayName: 'Management API Token',
+			name: 'managementToken',
+			type: 'string',
 			typeOptions: {
-				loadOptionsMethod: 'getRecentProjects',
+				password: true,
+			},
+			displayOptions: {
+				show: {
+					connectionMode: ['auto'],
+				},
 			},
 			default: '',
-			placeholder: 'Select a recent project or enter manually',
+			placeholder: 'sbp_xxxxxxxxxxxxxxxxxxxx',
+			description: 'Your Supabase Management API token. Get this from your Supabase dashboard under Account Settings > Access Tokens.',
+		},
+		{
+			displayName: 'Organization',
+			name: 'organizationId',
+			type: 'options',
+			typeOptions: {
+				loadOptionsMethod: 'getOrganizations',
+			},
+			displayOptions: {
+				show: {
+					connectionMode: ['auto'],
+				},
+			},
+			default: '',
+			description: 'Select your Supabase organization',
+		},
+		{
+			displayName: 'Project',
+			name: 'projectRef',
+			type: 'options',
+			typeOptions: {
+				loadOptionsMethod: 'getProjects',
+			},
+			displayOptions: {
+				show: {
+					connectionMode: ['auto'],
+				},
+			},
+			default: '',
+			description: 'Select your Supabase project',
+		},
+		{
+			displayName: 'Project URL',
+			name: 'host',
+			type: 'string',
+			displayOptions: {
+				show: {
+					connectionMode: ['auto'],
+				},
+			},
+			default: '',
+			placeholder: 'https://your-project.supabase.co',
+			description: 'Auto-populated from selected project. You can override this if needed.',
+		},
+
+		// Manual Entry Mode Fields
+		{
+			displayName: 'Project URL',
+			name: 'host',
+			type: 'string',
+			displayOptions: {
+				show: {
+					connectionMode: ['manual'],
+				},
+			},
+			default: '',
+			placeholder: 'https://your-project.supabase.co',
 			required: true,
-			description: 'Your Supabase project URL. Recent projects are cached for convenience.',
+			description: 'Your Supabase project URL',
 		},
 		{
 			displayName: 'API Key Type',
@@ -115,15 +205,17 @@ export class SupabaseApi implements ICredentialType {
 			headers: {
 				apikey: '={{$credentials.serviceKey}}',
 				Authorization: 'Bearer {{$credentials.serviceKey}}',
+				'Accept': 'application/json',
+				'Content-Type': 'application/json',
 			},
 		},
 		rules: [
 			{
 				type: 'responseSuccessBody',
 				properties: {
-					message: 'Connected to Supabase successfully',
-					key: 'message',
-					value: 'ok',
+					message: 'Connected to Supabase successfully! Credentials are valid and the API is accessible.',
+					key: 'status',
+					value: 200,
 				},
 			},
 		],
@@ -131,11 +223,28 @@ export class SupabaseApi implements ICredentialType {
 
 	methods = {
 		loadOptions: {
-			// Load recent Supabase project URLs from cache
+			// Load organizations for auto-discovery mode
+			async getOrganizations(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				return getOrganizationsOptions(this);
+			},
+
+			// Load projects for auto-discovery mode
+			async getProjects(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				return getProjectsOptions(this);
+			},
+
+			// Legacy method for backward compatibility
 			async getRecentProjects(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				try {
-					// In a real implementation, this would use n8n's context storage
-					// For now, we'll provide common Supabase URL patterns and allow manual input
+					const credentials = await this.getCredentials('supabaseApi');
+					const connectionMode = credentials?.connectionMode as string;
+
+					// If in auto mode, try to load real projects
+					if (connectionMode === 'auto') {
+						return getProjectsOptions(this);
+					}
+
+					// Manual mode - provide cached/example projects
 					const commonProjects: INodePropertyOptions[] = [
 						{
 							name: 'Enter project URL manually',

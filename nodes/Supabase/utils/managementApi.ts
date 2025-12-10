@@ -144,13 +144,14 @@ export class SupabaseManagementApiClient {
 export async function getOrganizationsOptions(loadOptionsFunctions: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 	try {
 		const credentials = await loadOptionsFunctions.getCredentials('supabaseApi');
-		const managementToken = credentials.managementToken as string;
+		const additionalOptions = credentials.additionalOptions as any;
+		const managementToken = additionalOptions?.managementToken as string;
 
 		if (!managementToken) {
 			return [{
 				name: 'Management API token required',
 				value: '',
-				description: 'Please provide a Management API token to auto-discover organizations',
+				description: 'Please enable Management API features and provide a token',
 			}];
 		}
 
@@ -176,19 +177,19 @@ export async function getOrganizationsOptions(loadOptionsFunctions: ILoadOptions
 export async function getProjectsOptions(loadOptionsFunctions: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 	try {
 		const credentials = await loadOptionsFunctions.getCredentials('supabaseApi');
-		const managementToken = credentials.managementToken as string;
-		const organizationId = credentials.organizationId as string;
+		const additionalOptions = credentials.additionalOptions as any;
+		const managementToken = additionalOptions?.managementToken as string;
 
 		if (!managementToken) {
 			return [{
 				name: 'Management API token required',
 				value: '',
-				description: 'Please provide a Management API token to auto-discover projects',
+				description: 'Please enable Management API features and provide a token',
 			}];
 		}
 
 		const client = new SupabaseManagementApiClient(managementToken);
-		const projects = await client.getProjects(organizationId);
+		const projects = await client.getProjects();
 
 		const options: INodePropertyOptions[] = projects.map(project => ({
 			name: `${project.name} (${project.ref})`,
@@ -206,7 +207,7 @@ export async function getProjectsOptions(loadOptionsFunctions: ILoadOptionsFunct
 		return [{
 			name: `Error: ${errorMessage}`,
 			value: '',
-			description: 'Failed to load projects. Please check your Management API token and organization selection.',
+			description: 'Failed to load projects. Please check your Management API token.',
 		}];
 	}
 }
@@ -214,22 +215,27 @@ export async function getProjectsOptions(loadOptionsFunctions: ILoadOptionsFunct
 export async function getTablesOptions(loadOptionsFunctions: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 	try {
 		const credentials = await loadOptionsFunctions.getCredentials('supabaseApi');
-		const managementToken = credentials.managementToken as string;
-		const projectRef = credentials.projectRef as string;
 		const additionalOptions = credentials.additionalOptions as any;
+		const managementToken = additionalOptions?.managementToken as string;
+		const enableManagementApi = additionalOptions?.enableManagementApi as boolean;
 		const schema = additionalOptions?.schema as string || 'public';
 
-		// Try Management API first if available
-		if (managementToken && projectRef) {
+		// Try Management API first if available and enabled
+		if (enableManagementApi && managementToken) {
 			try {
-				const client = new SupabaseManagementApiClient(managementToken);
-				const tables = await client.getTables(projectRef, schema);
+				const host = credentials.host as string;
+				const projectRef = SupabaseManagementApiClient.extractProjectRefFromUrl(host);
+				
+				if (projectRef) {
+					const client = new SupabaseManagementApiClient(managementToken);
+					const tables = await client.getTables(projectRef, schema);
 
-				return tables.map(table => ({
-					name: `${table.name}${table.rls_enabled ? ' (RLS)' : ''}`,
-					value: table.name,
-					description: `Schema: ${table.schema} | Size: ${table.size} | Live rows: ${table.n_live_tup}`,
-				}));
+					return tables.map(table => ({
+						name: `${table.name}${table.rls_enabled ? ' (RLS)' : ''}`,
+						value: table.name,
+						description: `Schema: ${table.schema} | Size: ${table.size} | Live rows: ${table.n_live_tup}`,
+					}));
+				}
 			} catch (managementError) {
 				// Fall back to direct database query if Management API fails
 				console.warn('Management API failed, falling back to direct query:', managementError);
@@ -248,48 +254,28 @@ export async function getTablesOptions(loadOptionsFunctions: ILoadOptionsFunctio
 			}];
 		}
 
-		// Query information_schema to get tables
-		const response = await fetch(`${host}/rest/v1/rpc/get_tables_info`, {
-			method: 'POST',
+		// Try alternative approach using PostgREST schema endpoint
+		const tablesResponse = await fetch(`${host}/rest/v1/`, {
+			method: 'GET',
 			headers: {
 				'apikey': serviceKey,
 				'Authorization': `Bearer ${serviceKey}`,
-				'Content-Type': 'application/json',
+				'Accept': 'application/vnd.pgrst.object+json',
 			},
-			body: JSON.stringify({ schema_name: schema }),
 		});
 
-		if (!response.ok) {
-			// Try alternative approach using PostgREST
-			const tablesResponse = await fetch(`${host}/rest/v1/`, {
-				method: 'GET',
-				headers: {
-					'apikey': serviceKey,
-					'Authorization': `Bearer ${serviceKey}`,
-					'Accept': 'application/vnd.pgrst.object+json',
-				},
-			});
-
-			if (tablesResponse.ok) {
-				const schemaInfo = await tablesResponse.text();
-				// Parse OpenAPI schema to extract table names
-				const tableNames = extractTableNamesFromSchema(schemaInfo);
-				return tableNames.map(name => ({
-					name: name,
-					value: name,
-					description: `Table in ${schema} schema`,
-				}));
-			}
-
-			throw new Error(`Failed to fetch tables: ${response.status} ${response.statusText}`);
+		if (tablesResponse.ok) {
+			const schemaInfo = await tablesResponse.text();
+			// Parse OpenAPI schema to extract table names
+			const tableNames = extractTableNamesFromSchema(schemaInfo);
+			return tableNames.map(name => ({
+				name: name,
+				value: name,
+				description: `Table in ${schema} schema`,
+			}));
 		}
 
-		const tables = await response.json();
-		return Array.isArray(tables) ? tables.map((table: any) => ({
-			name: table.table_name,
-			value: table.table_name,
-			description: `Type: ${table.table_type} | Schema: ${table.table_schema}`,
-		})) : [];
+		throw new Error(`Failed to fetch tables: ${tablesResponse.status} ${tablesResponse.statusText}`);
 
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -304,9 +290,9 @@ export async function getTablesOptions(loadOptionsFunctions: ILoadOptionsFunctio
 export async function getColumnsOptions(loadOptionsFunctions: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 	try {
 		const credentials = await loadOptionsFunctions.getCredentials('supabaseApi');
-		const managementToken = credentials.managementToken as string;
-		const projectRef = credentials.projectRef as string;
 		const additionalOptions = credentials.additionalOptions as any;
+		const managementToken = additionalOptions?.managementToken as string;
+		const enableManagementApi = additionalOptions?.enableManagementApi as boolean;
 		const schema = additionalOptions?.schema as string || 'public';
 
 		// Get table name from node parameters
@@ -320,64 +306,39 @@ export async function getColumnsOptions(loadOptionsFunctions: ILoadOptionsFuncti
 			}];
 		}
 
-		// Try Management API first if available
-		if (managementToken && projectRef) {
+		// Try Management API first if available and enabled
+		if (enableManagementApi && managementToken) {
 			try {
-				const client = new SupabaseManagementApiClient(managementToken);
-				const tables = await client.getTables(projectRef, schema);
-				const table = tables.find(t => t.name === tableName);
+				const host = credentials.host as string;
+				const projectRef = SupabaseManagementApiClient.extractProjectRefFromUrl(host);
+				
+				if (projectRef) {
+					const client = new SupabaseManagementApiClient(managementToken);
+					const tables = await client.getTables(projectRef, schema);
+					const table = tables.find(t => t.name === tableName);
 
-				if (table) {
-					const columns = await client.getColumns(projectRef, table.id, schema);
-					return columns
-						.filter(col => col.table === tableName)
-						.map(column => ({
-							name: `${column.name} (${column.data_type})${column.is_nullable ? '' : ' *'}`,
-							value: column.name,
-							description: `Type: ${column.data_type} | ${column.is_nullable ? 'Nullable' : 'Required'}${column.description ? ` | ${column.description}` : ''}`,
-						}));
+					if (table) {
+						const columns = await client.getColumns(projectRef, table.id, schema);
+						return columns
+							.filter(col => col.table === tableName)
+							.map(column => ({
+								name: `${column.name} (${column.data_type})${column.is_nullable ? '' : ' *'}`,
+								value: column.name,
+								description: `Type: ${column.data_type} | ${column.is_nullable ? 'Nullable' : 'Required'}${column.description ? ` | ${column.description}` : ''}`,
+							}));
+					}
 				}
 			} catch (managementError) {
 				console.warn('Management API failed for columns, falling back to direct query:', managementError);
 			}
 		}
 
-		// Fallback to direct database query
-		const host = credentials.host as string;
-		const serviceKey = credentials.serviceKey as string;
-
-		if (!host || !serviceKey) {
-			return [{
-				name: 'Project URL and API key required',
-				value: '',
-				description: 'Please provide project URL and API key to fetch columns',
-			}];
-		}
-
-		// Query information_schema.columns
-		const response = await fetch(`${host}/rest/v1/rpc/get_columns_info`, {
-			method: 'POST',
-			headers: {
-				'apikey': serviceKey,
-				'Authorization': `Bearer ${serviceKey}`,
-				'Content-Type': 'application/json',
-			},
-			body: JSON.stringify({ 
-				schema_name: schema,
-				table_name: tableName 
-			}),
-		});
-
-		if (!response.ok) {
-			throw new Error(`Failed to fetch columns: ${response.status} ${response.statusText}`);
-		}
-
-		const columns = await response.json();
-		return Array.isArray(columns) ? columns.map((column: any) => ({
-			name: `${column.column_name} (${column.data_type})${column.is_nullable === 'NO' ? ' *' : ''}`,
-			value: column.column_name,
-			description: `Type: ${column.data_type} | ${column.is_nullable === 'NO' ? 'Required' : 'Nullable'}${column.column_default ? ` | Default: ${column.column_default}` : ''}`,
-		})) : [];
+		// Fallback: return basic message for columns since we can't easily query them without custom functions
+		return [{
+			name: 'Enter column name manually',
+			value: '',
+			description: `Enter column names for table "${tableName}" manually. Enable Management API for auto-discovery.`,
+		}];
 
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : 'Unknown error';

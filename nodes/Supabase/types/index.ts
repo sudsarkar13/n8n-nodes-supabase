@@ -2,9 +2,10 @@
 export interface ISupabaseCredentials {
 	host: string;
 	serviceKey: string;
-	keyType: 'anon' | 'service_role';
 	additionalOptions?: {
 		schema?: string;
+		enableManagementApi?: boolean;
+		managementToken?: string;
 		autoRefreshToken?: boolean;
 		persistSession?: boolean;
 		detectSessionInUrl?: boolean;

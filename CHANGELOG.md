@@ -8,9 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.2.0] - 2024-12-10
 
 ### BREAKING CHANGES
+
 - **Removed Management API functionality completely** - This is a major simplification that removes all Management API features to focus on core Supabase operations
 
 ### Removed
+
 - Management API integration and all related code (341 lines removed)
 - Auto-discovery of tables and columns via Management API
 - Management API token configuration in credentials
@@ -20,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `nodes/Supabase/utils/managementApi.ts` file entirely
 
 ### Changed
+
 - **BREAKING**: Table field is now a simple text input instead of dropdown with loadOptions
 - **BREAKING**: Column names must be entered manually instead of auto-populated
 - Simplified credential configuration - only Host, Service Role Secret, and Schema remain
@@ -27,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved reliability by removing complex Management API authentication flows
 
 ### Benefits
+
 - Significantly simplified codebase and reduced complexity
 - Faster load times (no Management API calls)
 - More reliable credential system
@@ -35,7 +39,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Smaller bundle size
 
 ### Migration Guide
+
 Users upgrading from v1.1.x to v1.2.0:
+
 1. **Table names**: Previously auto-populated table dropdown now requires manual entry
 2. **Column names**: Must be entered manually in column fields
 3. **Credentials**: Remove any Management API tokens from existing credentials (they will be ignored)
